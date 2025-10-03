@@ -1,58 +1,95 @@
-import mongoose from "mongoose";
-import express, { Router } from "express";
+import express from "express";
 import Course from "../models/Course.js";
-const router = Router();
+import { upload } from "../cloudinary.js"; // multer storage
 
-//get allcourses
+const router = express.Router();
+
+// ---------------- Courses Routes ----------------
+
+// Get all courses
 router.get("/", async (req, res) => {
   try {
     const courses = await Course.find();
-    if (!courses) return res.status(400).json({ message: "Course not found" });
-    res.status(201).json(courses);
+    res.status(200).json(courses); // return empty [] if none
   } catch (e) {
-    console.log("error");
     res.status(500).json({ message: e.message });
   }
 });
 
-//get course by id
+// Get course by id
 router.get("/:id", async (req, res) => {
   try {
-    const course = await findById(req.params.id);
-    if (!course) return res.status(400).json({ message: "Course not found" });
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
     res.json(course);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 });
 
+// Add new course
 router.post("/add", async (req, res) => {
   try {
     const { name, description, duration } = req.body;
-    const newcourse = new Course({
-      name,
-      description,
-      duration,
-    });
-    await newcourse.save();
-    res.status(201).json(newcourse);
+    const newCourse = new Course({ name, description, duration });
+    await newCourse.save();
+    res.status(201).json(newCourse);
   } catch (e) {
-    return res.status(501).json({ message: "error creating course", e });
+    res.status(500).json({ message: "Error creating course", error: e.message });
   }
 });
 
+// Update course
 router.put("/:id", async (req, res) => {
   try {
     const { name, duration, description } = req.body;
-    const updatecourse = await Course.findByIdAndUpdate(
+    const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
       { name, duration, description },
       { new: true }
     );
-    if (!updatecourse) res.status(404).json({ message: "course not found" });
-    res.json(updatecourse);
+    if (!updatedCourse) return res.status(404).json({ message: "Course not found" });
+    res.json(updatedCourse);
   } catch (e) {
-    res.status(500).json({ message: "Error updating course", error });
+    res.status(500).json({ message: "Error updating course", error: e.message });
   }
 });
+
+// ---------------- Videos Routes ----------------
+
+// Get all videos of a course
+router.get("/:courseid/videos", async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.courseid);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+    res.status(200).json(course.videos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Upload video to a course
+router.post("/:courseid/addvideo", upload.single("video"), async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.courseid);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+  console.log("Body received:", req.body);
+  console.log("req.headers['content-type']:", req.headers['content-type']);
+  console.log("File received:", req.file); // should NOT be undefined now
+    const newVideo = {
+      title: req.body.title,
+    url: req.file?.path || req.file?.secure_url,
+      duration: req.body.duration,
+      quizzes: req.body.quizzes ? JSON.parse(req.body.quizzes) : [] // must match schema
+    };
+
+    course.videos.push(newVideo);
+    await course.save();
+
+    res.status(200).json({ message: "Video uploaded successfully", video: newVideo });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 export default router;

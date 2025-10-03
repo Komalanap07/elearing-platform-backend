@@ -9,6 +9,10 @@ const liveclassschema = mongoose.Schema({
     type: String,
     required: true,
   },
+  link:{
+    type:String,
+    required:true,
+  },
   time: {
     type: Date,
     required: true,

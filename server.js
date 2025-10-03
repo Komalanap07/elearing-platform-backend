@@ -1,9 +1,11 @@
 import express from "express";
 import connectdb from "./db.js";
 import dotenv from "dotenv";
+import cors from "cors";
 dotenv.config();
+
 const app=express();
-app.use(express.json());
+app.use(express.json());app.use(cors());
 import course from "./routes/courseroute.js";
 import liveclass from "./routes/liveclassroute.js";
 import user from './routes/userroute.js'
