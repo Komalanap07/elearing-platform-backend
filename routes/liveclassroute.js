@@ -19,12 +19,12 @@ router.get("/all",async(req,res)=>{
 
 router.post("/add",async(req,res)=>{
     try{
-        const {subjectname,duration,time,teachername,topicname}=req.body;
-        if(!subjectname || !duration || !time || ! teachername || !topicname){
+        const {subjectname,duration,link,time,teachername,topicname}=req.body;
+        if(!subjectname || !duration || !link|| !time || ! teachername || !topicname){
             return res.status(400).json({message:"all feilds are required"})
         }
         const newclass=new Liveclass({
-            subjectname,duration,time,teachername,topicname
+            subjectname,duration,time,teachername,topicname,link
         })
         await newclass.save();
         return res.status(201).json({message:"added successfully",newclass})
